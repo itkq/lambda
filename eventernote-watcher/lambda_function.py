@@ -1,23 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import boto3
 import mechanicalsoup
 import re
 import os
 import time
 import json
 import urllib
+import logging
+from base64 import b64decode
+
+kms = boto3.client("kms")
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 BASE_URL = "https://www.eventernote.com"
-SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
 
 def lambda_handler(event, context):
+    envs = ["EVENTERNOTE_USERNAME", "EVENTERNOTE_PASSWORD", "SLACK_WEBHOOK_URL"]
+    username, password, webhook_url = [
+            kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))['Plaintext'].decode('utf8')
+            for env in envs ]
+
     br = mechanicalsoup.StatefulBrowser()
     br.open(BASE_URL + "/login")
     br.select_form("#login_form")
-    br["email"] = os.environ["EVENTERNOTE_USERNAME"]
-    br["password"] = os.environ["EVENTERNOTE_PASSWORD"]
+    br["email"] = username
+    br["password"] = password
     br.submit_selected()
-
     br.open(BASE_URL + "/users/notice")
 
     event_dict = {}
@@ -35,6 +45,10 @@ def lambda_handler(event, context):
         else:
             event_dict[title]["cast"].append(cast)
 
+    if len(event_dict.keys()) == 0:
+        logger.info("no events")
+        return
+
     text = ""
     for k, v in event_dict.items():
         text += "[%s] %s %s\n" % (", ".join(sorted(v["cast"])), k, v["url"])
@@ -43,8 +57,10 @@ def lambda_handler(event, context):
             "text": text,
             "channel": "#event",
             }
+    logger.info(payload)
+
     binary_data = json.dumps(payload).encode("utf8")
-    urllib.request.urlopen(SLACK_WEBHOOK_URL, binary_data)
+    urllib.request.urlopen(webhook_url, binary_data)
 
 if __name__ == "__main__":
     lambda_handler(None, None)
