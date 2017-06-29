@@ -13,6 +13,7 @@ from base64 import b64decode
 BASE_BLOG_URL = "http://ameblo.jp"
 SEARCH_LIMIT_INDEX = 1
 DYNAMODB_TABLE_NAME = "AmebaCrawling"
+MAX_IMAGES_PER_TWEET = 4
 
 kms = boto3.client("kms")
 dynamodb = boto3.client("dynamodb")
@@ -84,8 +85,10 @@ def crawl_ameblo(ameba_id, blog_entry_id, iine_flg):
             break
 
     for article in reversed(target_articles):
-        media_ids = [ upload_image_by_url(u) for u in article["img_urls"] ]
         tweet_content = "『%s』⇒\n%s" % (article["title"], article["url"])
+        media_ids = [
+            upload_image_by_url(u) for u in article["img_urls"]
+        ][:MAX_IMAGES_PER_TWEET]
 
         logger.info(media_ids)
         logger.info(tweet_content)
