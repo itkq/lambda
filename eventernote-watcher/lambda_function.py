@@ -19,8 +19,9 @@ BASE_URL = "https://www.eventernote.com"
 def lambda_handler(event, context):
     envs = ["EVENTERNOTE_USERNAME", "EVENTERNOTE_PASSWORD", "SLACK_WEBHOOK_URL"]
     username, password, webhook_url = [
-            kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))['Plaintext'].decode('utf8')
-            for env in envs ]
+        kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))['Plaintext'].decode('utf8')
+        for env in envs
+    ]
 
     br = mechanicalsoup.StatefulBrowser()
     br.open(BASE_URL + "/login")
@@ -35,8 +36,8 @@ def lambda_handler(event, context):
     for event in [
         e for e in e for e in reversed(new_events)
         if not re.search("(日前|年前)", e.find("span").text)
-        and e.attrs["class"] != "past" ]:
-
+        and e.attrs["class"] != "past"
+    ]:
         cast = event.find("a").text
         title = event.find_all("a")[1].text
         url = BASE_URL + event.find_all("a")[1].attrs["href"]
@@ -55,9 +56,9 @@ def lambda_handler(event, context):
         text += "[%s] %s %s\n" % (", ".join(sorted(v["cast"])), k, v["url"])
 
     payload = {
-            "text": text,
-            "channel": "#event",
-            }
+        "text": text,
+        "channel": "#event",
+    }
     logger.info(payload)
 
     binary_data = json.dumps(payload).encode("utf8")
