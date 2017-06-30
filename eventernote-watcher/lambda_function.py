@@ -34,7 +34,7 @@ def lambda_handler(event, context):
     event_dict = {}
     new_events = br.get_current_page().select("div.gb_timeline_list > ul > li")
     for event in [
-        e for e in e for e in reversed(new_events)
+        e for e in reversed(new_events)
         if not re.search("(日前|年前)", e.find("span").text)
         and e.attrs["class"] != "past"
     ]:
