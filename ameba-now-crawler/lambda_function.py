@@ -105,7 +105,6 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
 
 
     succeeded_entry_id = ""
-    posts.reverse()
     while len(posts) > 0:
         post = posts.pop()
 
