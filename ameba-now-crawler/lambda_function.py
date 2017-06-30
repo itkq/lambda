@@ -23,8 +23,9 @@ dynamodb = boto3.client("dynamodb")
 
 envs = ["ACCESS_TOKEN", "ACCESS_SECRET", "CONSUMER_KEY", "CONSUMER_SECRET"]
 access_token, access_secret, consumer_key, consumer_secret = [
-        kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))["Plaintext"].decode("utf8")
-        for env in envs ]
+    kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))["Plaintext"].decode("utf8")
+    for env in envs
+]
 
 oauth = OAuth(access_token, access_secret, consumer_key, consumer_secret)
 
@@ -35,8 +36,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 opener = request.build_opener(
-        request.HTTPSHandler(),
-        request.HTTPCookieProcessor(cookiejar.CookieJar()))
+    request.HTTPSHandler(),
+    request.HTTPCookieProcessor(cookiejar.CookieJar()))
 request.install_opener(opener)
 
 def upload_image_by_url(image_url):
@@ -126,8 +127,9 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
             else:
                 res = t.statuses.update(status=content)
 
-            logger.info(post["entry_id"])
             succeeded_entry_id = post["entry_id"]
+
+    logger.info(succeeded_entry_id)
 
     if len(succeeded_entry_id) > 0:
         dynamodb.update_item(
