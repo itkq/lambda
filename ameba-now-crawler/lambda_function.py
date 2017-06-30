@@ -13,7 +13,6 @@ import time
 from datetime import datetime
 
 BASE_NOW_URL = "http://now.ameba.jp"
-SEARCH_LIMIT_INDEX = 1
 DYNAMODB_TABLE_NAME = "AmebaCrawling"
 TWEET_SIZE = 140
 MAX_IMAGES_PER_TWEET = 4
@@ -72,6 +71,8 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
     html = request.urlopen(url).read()
     soup = BeautifulSoup(html, "html.parser")
 
+    logger.info(datetime.fromtimestamp(time.time()))
+
     posts = []
     for entry in soup.select("li.now"):
         entry_id = entry.get('data-entry-id')
@@ -91,9 +92,9 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
         if len(m) == 0:
             formatted_time = time_str
         else:
-            ut = int(time.time()) - int(m[0])*60 - 10
+            ut = time.time() - int(m[0])*60 - 10
             formatted_time = datetime.strftime(
-                datetime.fromtimestamp(ut), "[%-m/%d %H:%M]"
+                datetime.fromtimestamp(ut), "[%-m/-%d %H:%M]"
             )
 
         header = formatted_time + " "
@@ -131,6 +132,7 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
     logger.info(succeeded_entry_id)
 
     if len(succeeded_entry_id) > 0:
+        logger.info("success")
         dynamodb.update_item(
             TableName=DYNAMODB_TABLE_NAME,
             Key={
