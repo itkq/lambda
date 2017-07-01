@@ -43,7 +43,10 @@ def upload_image_by_url(image_url):
     res = request.urlopen(req)
     image = res.read()
 
-    return t_upload.media.upload(media=image)["media_id_string"]
+    id = t_upload.media.upload(media=image)["media_id_string"]
+    logger.info(id)
+
+    return id
 
 def get_new_articles(ameba_id, current_entry_id, page):
     url = os.path.join(BASE_BLOG_URL, ameba_id, "page-%s.html" % page)
@@ -84,19 +87,18 @@ def crawl_ameblo(ameba_id, blog_entry_id, iine_flg):
         is_continued, new_articles = get_new_articles(
             ameba_id, blog_entry_id, page
         )
+        logger.info(new_articles)
+
         target_articles.extend(new_articles)
 
         if not is_continued:
             break
 
     for article in reversed(target_articles):
-        tweet_content = "『%s』⇒\n%s" % (article["title"], article["url"])
         media_ids = [
-            upload_image_by_url(u) for u in article["img_urls"]
-        ][:MAX_IMAGES_PER_TWEET]
-
-        logger.info(media_ids)
-        logger.info(tweet_content)
+            upload_image_by_url(u) for u in article["img_urls"][:MAX_IMAGES_PER_TWEET]
+        ]
+        tweet_content = "『%s』⇒\n%s" % (article["title"], article["url"])
 
         if len(media_ids) > 0:
             logger.info(tweet_content)
@@ -105,9 +107,6 @@ def crawl_ameblo(ameba_id, blog_entry_id, iine_flg):
         else:
             logger.info(tweet_content)
             res = t.statuses.update(status=tweet_content)
-
-        logger.info(res)
-
 
     logger.info(target_articles)
 
@@ -134,5 +133,6 @@ def lambda_handler(event, context):
             item["blog_entry_id"]["N"],
             item["iine_flg"]["BOOL"]
         )
+
 if __name__ == "__main__":
     lambda_handler(None, None)
