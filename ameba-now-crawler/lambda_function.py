@@ -138,7 +138,7 @@ def crawl_ameba_now(ameba_id, current_entry_id, mitayo_flg):
             Key={
                 "ameba_id": {"S": ameba_id}
             },
-            UpdateExpression="SET blog_entry_id = :new_id",
+            UpdateExpression="SET now_entry_id = :new_id",
             ExpressionAttributeValues={
                 ":new_id": {"N": succeeded_entry_id}
             }
