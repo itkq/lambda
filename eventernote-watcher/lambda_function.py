@@ -57,7 +57,6 @@ def lambda_handler(event, context):
 
     payload = {
         "text": text,
-        "channel": "#event",
     }
     logger.info(payload)
 
