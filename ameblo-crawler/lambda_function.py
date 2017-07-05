@@ -99,6 +99,7 @@ def crawl_ameblo(ameba_id, blog_entry_id, iine_flg):
             upload_image_by_url(u) for u in article["img_urls"][:MAX_IMAGES_PER_TWEET]
         ]
         tweet_content = "『%s』⇒\n%s" % (article["title"], article["url"])
+        logger.info(tweet_content)
 
         if len(media_ids) > 0:
             logger.info(tweet_content)
