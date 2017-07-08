@@ -51,7 +51,7 @@ def lambda_handler(event, context):
         logger.info("no events")
         return
 
-    text = ""
+    text = "New %d events:\n\n" % len(event_dict)
     for k, v in event_dict.items():
         text += "[%s] %s %s\n" % (", ".join(sorted(v["cast"])), k, v["url"])
 
