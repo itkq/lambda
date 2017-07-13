@@ -53,7 +53,7 @@ def lambda_handler(event, context):
 
     text = "New %d events:\n\n" % len(event_dict)
     for k, v in event_dict.items():
-        text += "[%s] %s %s\n" % (", ".join(sorted(v["cast"])), k, v["url"])
+        text += "[%s] %s %s\n" % (", ".join(sorted(list(set(v["cast"])))), k, v["url"])
 
     payload = {
         "text": text,
