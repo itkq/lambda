@@ -32,7 +32,10 @@ def lambda_handler(event, context):
     br.open(BASE_URL + "/users/notice")
 
     event_dict = {}
-    new_events = br.get_current_page().select("div.gb_timeline_list > ul > li")
+    new_events = sorted(
+        br.get_current_page().select("div.gb_timeline_list > ul > li"),
+        key=lambda e: e.find_all("a")[1].text
+    )
     for event in [
         e for e in reversed(new_events)
         if not re.search("(日前|年前)", e.find("span").text)
@@ -51,9 +54,22 @@ def lambda_handler(event, context):
         logger.info("no events")
         return
 
-    text = "New %d events:\n\n" % len(event_dict)
+    cast_dict = {}
     for k, v in event_dict.items():
-        text += "[%s] %s %s\n" % (", ".join(sorted(list(set(v["cast"])))), k, v["url"])
+        casts = ", ".join(sorted(set(v["cast"])))
+
+        if not casts in cast_dict:
+            cast_dict[casts] = []
+
+        cast_dict[casts].append({"event": k, "url": v["url"]})
+
+    text = "New %d events:\n\n" % len(event_dict)
+
+    for k, v in cast_dict.items():
+        text += "【%s】\n" % k
+
+        for vv in sorted(v, key=lambda e: e["event"]):
+            text += "  ・%s (%s)\n" % (vv["event"], vv["url"])
 
     payload = {
         "text": text,
