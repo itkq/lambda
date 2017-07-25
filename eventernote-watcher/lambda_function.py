@@ -56,7 +56,7 @@ def lambda_handler(event, context):
 
     cast_dict = {}
     for k, v in event_dict.items():
-        casts = ", ".join(sorted(set(v["cast"])))
+        casts = " / ".join(sorted(set(v["cast"])))
 
         if not casts in cast_dict:
             cast_dict[casts] = []
@@ -69,7 +69,7 @@ def lambda_handler(event, context):
         text += "【%s】\n" % k
 
         for vv in sorted(v, key=lambda e: e["event"]):
-            text += "  ・%s (%s)\n" % (vv["event"], vv["url"])
+            text += "・<%s|%s>\n" % (vv["url"], vv["event"])
 
     payload = {
         "text": text,
