@@ -39,7 +39,8 @@ def lambda_handler(event, context):
     for event in [
         e for e in reversed(new_events)
         if not re.search("(日前|年前)", e.find("span").text)
-        and e.attrs["class"] != "past"
+            and e.attrs["class"] != "past"
+            and not re.search("重複", e.find_all("a")[1].text)
     ]:
         cast = event.find("a").text
         title = event.find_all("a")[1].text
