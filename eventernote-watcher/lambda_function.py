@@ -16,9 +16,31 @@ logger.setLevel(logging.INFO)
 
 BASE_URL = "https://www.eventernote.com"
 
+def slack_text(event_dict, cast_dict):
+    text = "New %d events:\n\n" % len(event_dict)
+
+    for k, v in cast_dict.items():
+        text += "【%s】\n" % k
+
+        for vv in sorted(v, key=lambda e: e["event"]):
+            text += "・<%s|%s>\n" % (vv["url"], vv["event"])
+
+    return text
+
+def discord_text(event_dict, cast_dict):
+    text = "New %d events:\n\n" % len(event_dict)
+
+    for k, v in cast_dict.items():
+        text += "【%s】\n" % k
+
+        for vv in sorted(v, key=lambda e: e["event"]):
+            text += "・[%s](%s)\n" % (vv["event"], vv["url"])
+
+    return text
+
 def lambda_handler(event, context):
     envs = ["EVENTERNOTE_USERNAME", "EVENTERNOTE_PASSWORD", "SLACK_WEBHOOK_URL"]
-    username, password, webhook_url = [
+    username, password, slack_webhook_url = [
         kms.decrypt(CiphertextBlob=b64decode(os.environ[env]))['Plaintext'].decode('utf8')
         for env in envs
     ]
@@ -64,21 +86,25 @@ def lambda_handler(event, context):
 
         cast_dict[casts].append({"event": k, "url": v["url"]})
 
-    text = "New %d events:\n\n" % len(event_dict)
-
-    for k, v in cast_dict.items():
-        text += "【%s】\n" % k
-
-        for vv in sorted(v, key=lambda e: e["event"]):
-            text += "・<%s|%s>\n" % (vv["url"], vv["event"])
-
-    payload = {
-        "text": text,
+    slack_payload = {
+        "text": slack_text(event_dict, cast_dict),
     }
-    logger.info(payload)
+    logger.info(slack_payload)
 
-    binary_data = json.dumps(payload).encode("utf8")
-    urllib.request.urlopen(webhook_url, binary_data)
+    binary_data = json.dumps(slack_payload).encode("utf8")
+    urllib.request.urlopen(slack_webhook_url, binary_data)
+
+    if os.environ.get("DISCORD_WEBHOOK_URL", True) != True:
+        discord_webhook_url = kms.decrypt(
+            CiphertextBlob=b64decode(os.environ["DISCORD_WEBHOOK_URL"])
+        )['Plaintext'].decode('utf8')
+        discord_payload = {
+            "content": discord_text(event_dict, cast_dict),
+        }
+        logger.info(discord_payload)
+
+        binary_data = json.dumps(discord_payload).encode("utf8")
+        urllib.request.urlopen(webhook_url, binary_data)
 
 if __name__ == "__main__":
     lambda_handler(None, None)
