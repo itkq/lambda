@@ -104,7 +104,7 @@ def lambda_handler(event, context):
         logger.info(discord_payload)
 
         binary_data = json.dumps(discord_payload).encode("utf8")
-        urllib.request.urlopen(webhook_url, binary_data)
+        urllib.request.urlopen(discord_webhook_url, binary_data)
 
 if __name__ == "__main__":
     lambda_handler(None, None)
