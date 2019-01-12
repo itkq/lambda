@@ -8,6 +8,7 @@ import time
 import json
 import urllib
 import logging
+import requests
 from base64 import b64decode
 
 kms = boto3.client("kms")
@@ -31,10 +32,12 @@ def discord_text(event_dict, cast_dict):
     text = "New %d events:\n\n" % len(event_dict)
 
     for k, v in cast_dict.items():
-        text += "【%s】\n" % k
+        casts = k.split(" / ")
+        text += " / ".join(["**%s**" % c for c in casts])
+        text += "\n"
 
         for vv in sorted(v, key=lambda e: e["event"]):
-            text += "・[%s](%s)\n" % (vv["event"], vv["url"])
+            text += "- [%s](%s)\n" % (vv["event"], vv["url"])
 
     return text
 
@@ -98,13 +101,17 @@ def lambda_handler(event, context):
         discord_webhook_url = kms.decrypt(
             CiphertextBlob=b64decode(os.environ["DISCORD_WEBHOOK_URL"])
         )['Plaintext'].decode('utf8')
+
         discord_payload = {
             "content": discord_text(event_dict, cast_dict),
         }
         logger.info(discord_payload)
 
-        binary_data = json.dumps(discord_payload).encode("utf8")
-        urllib.request.urlopen(discord_webhook_url, binary_data)
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        requests.post(discord_webhook_url, headers=headers, data=json.dumps(discord_payload))
 
 if __name__ == "__main__":
     lambda_handler(None, None)
